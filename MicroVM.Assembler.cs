@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using System.Runtime.InteropServices;
 
 namespace MicroVM {
     class Assembler {
@@ -38,13 +37,9 @@ namespace MicroVM {
             public Token[] tokens;
         }
 
-        [StructLayout(LayoutKind.Explicit)]
         public struct Variable {
-            [FieldOffset(0)]
             public CPU.Value32 val32;
-            [FieldOffset(4)]
             public Type type;
-            [FieldOffset(8)]
             public int size;
 
             public enum Type {
