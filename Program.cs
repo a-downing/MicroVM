@@ -25,9 +25,6 @@ namespace MicroVM
             .word x 33
             .word y 34
             .word z 35
- 
-            # label resolving is fucked up, so need to do this
-            jmp main
 
             func:
                 ret

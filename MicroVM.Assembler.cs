@@ -321,6 +321,25 @@ namespace MicroVM {
                 //Print($"{instruction.opcode} [{String.Join(", ", instruction.operands)}] {instruction.immediate.word.Uint} [{(instruction.additionalInstructions == null ? "" : String.Join(", ", instruction.additionalInstructions))}]");
             }
 
+            List<KeyValuePair<string, Symbol>> changes = new List<KeyValuePair<string, Symbol>>();
+
+            foreach(var pair in symbols) {
+                Symbol symbol = pair.Value;
+
+                if(symbol.type == Symbol.Type.LABEL) {
+                    int addr = instructions[symbol.labelInstructionIndex].address;
+
+                    if(symbol.var.val32.Int != addr) {
+                        symbol.var.val32.Int = addr;
+                        changes.Add(new KeyValuePair<string, Symbol>(pair.Key, symbol));
+                    }
+                }
+            }
+
+            foreach(var pair in changes) {
+                symbols[pair.Key] = pair.Value;
+            }
+
             return true;
         }
 
