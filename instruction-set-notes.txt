@@ -1,0 +1,17 @@
+New arch somewhat similar to ARM, but much simpler
+
+This will most probably change a lot over time
+
+64 registers
+instructions can take three registers and a two-bit immediate, two registers and an 8-bit immediate, one register and a 15-bit immediate, or zero registers and a 22-bit immediate
+if the bits of the immediate value are all set to 1, the immediate value is the 32-bit value of the next instruction (instruction takes 2 clock cycles)
+conditions: AL, EQ, NE, GT, GE, LT, LE, RESERVED
+opcode: 0 - 62, 63 is reserved
+
+condition    opcode                     reg1                        reg2                       reg3               unused
+[31, 30, 29] [28, 27, 26, 25, 24, 23] 0 [21, 20, 19, 18, 17, 16] 0  [14, 13, 12, 11, 10, 9] 0  [7, 6, 5, 4, 3, 2] [1, 0]
+                                                                                               immediate
+                                                                                            1  [7, 6, 5, 4, 3, 2,  1, 0]
+                                                                    immediate
+                                        immediate                1  [14, 13, 12, 11, 10, 9, 8,  7, 6, 5, 4, 3, 2,  1, 0]
+                                      1 [21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8,  7, 6, 5, 4, 3, 2,  1, 0]
