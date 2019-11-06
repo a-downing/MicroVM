@@ -42,6 +42,8 @@ namespace MicroVM
                 ret
 
             main:
+                #jmp math_perf
+
                 mov r0 42
                 cmpi r0 42
                 jmp.ne 1001
@@ -74,6 +76,30 @@ namespace MicroVM
                 ldr r0 0xbeefdead
                 cmpu r0 0xdeadbeef
                 jmp.ne 1006
+
+                mov r0 -1.5
+                mov r1 -1.6
+                cmpf r0 r1
+                jmp.lt 1007
+                jmp.le 1008
+                jmp.eq 1009
+
+                mov r0 0.25
+                mov r1 0.5
+                addf r2 r0 r1
+                cmpf r2 0.75
+                jmp.ne 1010
+
+                mov r0 1
+                itof r0
+                addf r0 r0 -0.25
+                mov r1 1.5
+                ftoi r1
+                itof r1
+                subf r1 r1 0.5
+                modf r2 r0 r1
+                cmpf r2 0.25
+                jmp.ne 1011
                 
                 # uncomment for performance test
                 #jmp main
@@ -109,7 +135,7 @@ namespace MicroVM
             stopWatch.Start();
 
             for(int i = 0; i < numCycles / 100; i++) {
-                if(!cpu.Cycle(out st, 1000)) {
+                if(!cpu.Cycle(out st, 100)) {
                     if(st == MicroVM.CPU.Status.OUT_OF_INSTRUCTIONS) {
                         Print($"program finished");
                     } else {

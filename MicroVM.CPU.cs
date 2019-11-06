@@ -110,6 +110,7 @@ namespace MicroVM {
             JMP, JNE, CALL, PUSH, POP,
             MOV, LDR, LDRB, STR, STRB, CMPI, CMPU,
             SHRS, SHRU, SHL, AND, OR, XOR, NOT, ADD, SUB, MUL, DIV, MOD,
+            ITOF, FTOI, CMPF, ADDF, SUBF, MULF, DIVF, MODF,
             RESERVED = 0x3F
         }
 
@@ -183,8 +184,6 @@ namespace MicroVM {
 
                 if((flags & (uint)Flag.INTERRUPTS_ENABLED) != 0 && pendingInterrupts.Count != 0) {
                     uint addr = pendingInterrupts.Dequeue();
-
-                    Print($"dequeued interrupt, addr: {addr}");
 
                     AssignMemory(registers[(int)Register.SP], pc);
                     registers[(int)Register.SP] += 4;
@@ -279,11 +278,13 @@ namespace MicroVM {
                 uint op1Flag = inst & (uint)Instruction.OP1_FLAG_MASK;
                 uint imm1 = (inst & (uint)Instruction.IMM1_MASK) >> (int)Instruction.IMM1_SHIFT;
 
-                if(op1Flag != 0 && imm1 == (uint)Instruction.IMM1_MASK) {
+                if(op1Flag == 0 && imm1 == (uint)Instruction.IMM1_MASK) {
                     imm1 = instructions[pc++];
                 }
 
                 uint arg1 = (op1Flag != 0) ? registers[op1] : imm1;
+                // just testing this, if it's not slower, arg1 will just be a Value32
+                Value32 arg1v = new Value32 { Uint = arg1 };
                 handledHere = true;
 
                 /*PrintVar(nameof(op1), op1);
@@ -309,6 +310,16 @@ namespace MicroVM {
                         registers[(int)Register.SP] -= 4;
                         registers[op1] = ReadMemory(registers[(int)Register.SP]).Uint;
                         break;
+                    case Opcode.ITOF:
+                        var itof = new Value32 { Uint = registers[op1] };
+                        itof.Float = (float)itof.Int;
+                        registers[op1] = itof.Uint;
+                        break;
+                    case Opcode.FTOI:
+                        var ftoi = new Value32 { Uint = registers[op1] };
+                        ftoi.Int = (int)ftoi.Float;
+                        registers[op1] = ftoi.Uint;
+                        break;
                     default:
                         handledHere = false;
                         break;
@@ -328,6 +339,7 @@ namespace MicroVM {
                 }
 
                 uint arg2 = (op2Flag != 0) ? registers[op2] : imm2;
+                Value32 arg2v = new Value32 { Uint = arg2 };
                 handledHere = true;
 
                 /*PrintVar(nameof(op2), op2);
@@ -356,6 +368,11 @@ namespace MicroVM {
                         flags = (arg1 > arg2) ? flags | (uint)Flag.GREATER_THAN : flags & ~(uint)Flag.GREATER_THAN;
                         flags = (arg1 < arg2) ? flags | (uint)Flag.LESS_THAN : flags & ~(uint)Flag.LESS_THAN;
                         break;
+                    case Opcode.CMPF:
+                        flags = (arg1v.Float == arg2v.Float) ? flags | (uint)Flag.EQUAL : flags & ~(uint)Flag.EQUAL;
+                        flags = (arg1v.Float > arg2v.Float) ? flags | (uint)Flag.GREATER_THAN : flags & ~(uint)Flag.GREATER_THAN;
+                        flags = (arg1v.Float < arg2v.Float) ? flags | (uint)Flag.LESS_THAN : flags & ~(uint)Flag.LESS_THAN;
+                        break;
                     default:
                         handledHere = false;
                         break;
@@ -370,11 +387,12 @@ namespace MicroVM {
                 uint op3Flag = inst & (uint)Instruction.OP3_FLAG_MASK;
                 uint imm3 = (inst & (uint)Instruction.IMM3_MASK) >> (int)Instruction.IMM3_SHIFT;
 
-                if(op3Flag != 0 && imm3 == (uint)Instruction.IMM3_MASK) {
+                if(op3Flag == 0 && imm3 == (uint)Instruction.IMM3_MASK) {
                     imm3 = instructions[pc++];
                 }
 
                 uint arg3 = (op3Flag != 0) ? registers[op3] : imm3;
+                Value32 arg3v = new Value32 { Uint = arg3 };
                 handledHere = true;
 
                 /*PrintVar(nameof(op3), op3);
@@ -428,7 +446,32 @@ namespace MicroVM {
                             return false;
                         }
 
-                        registers[op1] = arg2 / arg3;
+                        registers[op1] = arg2 % arg3;
+                        break;
+                    case Opcode.ADDF:
+                        registers[op1] = new Value32 { Float = arg2v.Float + arg3v.Float }.Uint;
+                        break;
+                    case Opcode.SUBF:
+                        registers[op1] = new Value32 { Float = arg2v.Float - arg3v.Float }.Uint;
+                        break;
+                    case Opcode.MULF:
+                        registers[op1] = new Value32 { Float = arg2v.Float * arg3v.Float }.Uint;
+                        break;
+                    case Opcode.DIVF:
+                        if(arg2v.Float == 0) {
+                            status = Status.DIVISION_BY_ZERO;
+                            return false;
+                        }
+
+                        registers[op1] = new Value32 { Float = arg2v.Float / arg3v.Float }.Uint;
+                        break;
+                    case Opcode.MODF:
+                        if(arg2v.Float == 0) {
+                            status = Status.DIVISION_BY_ZERO;
+                            return false;
+                        }
+
+                        registers[op1] = new Value32 { Float = arg2v.Float % arg3v.Float }.Uint;
                         break;
                     default:
                         handledHere = false;
