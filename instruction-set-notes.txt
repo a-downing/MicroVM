@@ -3,7 +3,7 @@ New arch somewhat similar to ARM, but much simpler
 This will most probably change a lot over time
 
 64 registers
-instructions can take three registers and a two-bit immediate, two registers and an 8-bit immediate, one register and a 15-bit immediate, or zero registers and a 22-bit immediate
+instructions can take three registers, two registers and an 8-bit immediate, one register and a 15-bit immediate, or zero registers and a 22-bit immediate
 if the bits of the immediate value are all set to 1, the immediate value is the 32-bit value of the next instruction (instruction takes 2 clock cycles)
 conditions: AL, EQ, NE, GT, GE, LT, LE, RESERVED
 opcode: 0 - 62, 63 is reserved
