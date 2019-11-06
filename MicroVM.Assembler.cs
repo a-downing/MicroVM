@@ -12,6 +12,7 @@ namespace MicroVM {
         public List<uint> code = new List<uint>();
         public byte[] memory = null;
         public int numInstructions;
+        List<KeyValuePair<Symbol, Symbol>> isrs = new List<KeyValuePair<Symbol, Symbol>>();
 
         static void Print(string msg) {
             Console.WriteLine(msg);
@@ -29,6 +30,7 @@ namespace MicroVM {
             instructions.Clear();
             code.Clear();
             memory = null;
+            isrs.Clear();
         }
 
         struct Statement {
@@ -340,6 +342,24 @@ namespace MicroVM {
                 symbols[pair.Key] = pair.Value;
             }
 
+            foreach(var pair in isrs) {
+                Symbol target = pair.Key;
+                Symbol replacement = pair.Value;
+                Instruction targetInstruction = instructions[target.labelInstructionIndex];
+                Instruction replacementInstruction = instructions[replacement.labelInstructionIndex];
+
+                if(targetInstruction.additionalInstructions != null) {
+                    errors.Add($"isr \"{target.name}\" is broken, stub address is too large");
+                    return false;
+                } else if(replacementInstruction.address >= GetMaxImmediateValue(1)) {
+                    errors.Add($"isr \"{replacement.name}\" address is too large");
+                    return false;
+                }
+
+                targetInstruction.immediate.var.val32.Int = replacementInstruction.address;
+                instructions[target.labelInstructionIndex] = targetInstruction;
+            }
+
             return true;
         }
 
@@ -406,29 +426,26 @@ namespace MicroVM {
                             return false;
                         }
 
-                        Symbol labelAddr0;
-                        Symbol labelAddr1;
+                        Symbol target;
+                        Symbol replacement;
 
-                        if(!symbols.TryGetValue(statement.tokens[1].stringValue, out labelAddr0)) {
-                            AddError(statement.lineNum, $"invalid isr directive, no identifier \"{statement.tokens[1].stringValue}\"");
+                        if(!symbols.TryGetValue(statement.tokens[1].stringValue, out target)) {
+                            AddError(statement.lineNum, $"invalid isr directive, no symbol \"{statement.tokens[1].stringValue}\"");
                             return false;
-                        } else if(labelAddr0.type != Symbol.Type.LITERAL) {
-                            AddError(statement.lineNum, $"invalid isr directive, identifier \"{statement.tokens[1].stringValue}\" is not an address");
+                        } else if(target.type != Symbol.Type.LABEL) {
+                            AddError(statement.lineNum, $"invalid isr directive, symbol \"{statement.tokens[1].stringValue}\" is not a label");
                             return false;
                         }
 
-                        if(!symbols.TryGetValue(statement.tokens[2].stringValue, out labelAddr1)) {
-                            AddError(statement.lineNum, $"invalid isr directive, no identifier \"{statement.tokens[2].stringValue}\"");
+                        if(!symbols.TryGetValue(statement.tokens[2].stringValue, out replacement)) {
+                            AddError(statement.lineNum, $"invalid isr directive, no symbol \"{statement.tokens[2].stringValue}\"");
                             return false;
-                        } else if(labelAddr1.type != Symbol.Type.LITERAL) {
-                            AddError(statement.lineNum, $"invalid isr directive, identifier \"{statement.tokens[2].stringValue}\" is not an address");
+                        } else if(replacement.type != Symbol.Type.LABEL) {
+                            AddError(statement.lineNum, $"invalid isr directive, symbol \"{statement.tokens[2].stringValue}\" is not a label");
                             return false;
                         }
 
-                        //var inst = instructions[labelAddr0.word.Int + 1];
-                        //inst = labelAddr1.word.Uint;
-                        //instructions[labelAddr0.word.Int + 1] = inst;
-                        AddError(statement.lineNum, $"isr is unfinished");
+                        isrs.Add(new KeyValuePair<Symbol, Symbol>(target, replacement));
                     } else {
                         AddError(statement.lineNum, $"unknown directive \"{statement.tokens[0].stringValue}\"");
                         return false;

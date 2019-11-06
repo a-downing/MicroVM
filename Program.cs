@@ -22,9 +22,21 @@ namespace MicroVM
 
             // some tests to make sure things are working
             bool success = assembler.Compile(@"
+            isr_0_name:
+                jmp isr_0_stub
+
+            isr_0_stub:
+                ret
+            
             .word x 33
             .word y 34
             .word z 35
+
+            .isr isr_0_name my_isr_0
+            my_isr_0:
+                mov r0 0x12345678
+                str r0 0x87654321
+                ret
 
             func:
                 ret
@@ -77,6 +89,9 @@ namespace MicroVM
 
             assembler.LoadProgramToCPU(cpu);
             MicroVM.CPU.Status st;
+
+            // test interrupt 0 (isr_0_name)
+            cpu.Interrupt(0);
 
             // pc will be one of the 1000, 1001... codes to identify the bugs on failure
             if(!cpu.Cycle(out st, 1000)) {
