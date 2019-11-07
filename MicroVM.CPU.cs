@@ -10,10 +10,11 @@ namespace MicroVM {
         public uint flags = (uint)Flag.INTERRUPTS_ENABLED;
         Queue<uint> pendingInterrupts = new Queue<uint>();
         public IPeripheral peripheral = null;
-        static int maxPendingInterrupts = 8;
+        static int maxPendingInterrupts = 32;
         System.Random random = new System.Random();
         public uint pc = 0;
         public uint peripheralBase = 0;
+        Status savedStatus;
 
         static void Print(string msg) {
             Console.WriteLine(msg);
@@ -120,7 +121,8 @@ namespace MicroVM {
             MISSING_INSTRUCTION,
             BAD_INSTRUCTION,
             SEGFAULT,
-            DIVISION_BY_ZERO
+            DIVISION_BY_ZERO,
+            UNDEFINED
         }
 
         public bool Interrupt(uint addr) {
@@ -142,6 +144,9 @@ namespace MicroVM {
             if(peripheral != null && addr >= peripheralBase) {
                 peripheral.Write(addr, val);
                 return;
+            } else if(addr >= memory.Length) {
+                savedStatus = Status.SEGFAULT;
+                return;
             }
 
             memory[addr + 0] = val.byte0;
@@ -157,6 +162,9 @@ namespace MicroVM {
         Value32 ReadMemory(uint addr) {
             if(peripheral != null && addr >= peripheralBase) {
                 return peripheral.Read(addr);
+            } else if(addr >= memory.Length) {
+                savedStatus = Status.SEGFAULT;
+                return new Value32 { Uint = 0 };
             }
 
             Value32 val = new Value32 {
@@ -171,14 +179,11 @@ namespace MicroVM {
         }
 
         public bool Cycle(out Status status, int numCycles = 1) {
-            for(int i = 0; i < numCycles; i++) {
-                if(pc >= instructions.Length) {
-                    status = Status.OUT_OF_INSTRUCTIONS;
-                    return false;
-                }
+            savedStatus = Status.UNDEFINED;
 
-                if(registers[(int)Register.SP] >= memory.Length) {
-                    status = Status.SEGFAULT;
+            for(int i = 0; i < numCycles; i++) {
+                if(savedStatus != Status.UNDEFINED) {
+                    status = savedStatus;
                     return false;
                 }
 
@@ -189,17 +194,15 @@ namespace MicroVM {
                     registers[(int)Register.SP] += 4;
                     pc = addr;
 
-                    if(pc >= instructions.Length) {
-
-                        status = Status.OUT_OF_INSTRUCTIONS;
+                    if(savedStatus != Status.UNDEFINED) {
+                        status = savedStatus;
                         return false;
                     }
+                }
 
-                    if(registers[(int)Register.SP] >= memory.Length) {
-
-                        status = Status.SEGFAULT;
-                        return false;
-                    }
+                if(pc >= instructions.Length) {
+                    status = Status.OUT_OF_INSTRUCTIONS;
+                    return false;
                 }
 
                 uint inst = instructions[pc++];
@@ -270,8 +273,13 @@ namespace MicroVM {
                 }
 
                 if(handledHere) {
-                    status = Status.SUCCESS;
-                    continue;
+                    if(savedStatus == Status.UNDEFINED) {
+                        status = Status.SUCCESS;
+                        continue;
+                    } else {
+                        status = savedStatus;
+                        return false;
+                    }
                 }
 
                 uint op1 = (inst & (uint)Instruction.OP1_MASK) >> (int)Instruction.OP1_SHIFT;
@@ -279,6 +287,11 @@ namespace MicroVM {
                 uint imm1 = (inst & (uint)Instruction.IMM1_MASK) >> (int)Instruction.IMM1_SHIFT;
 
                 if(op1Flag == 0 && imm1 == (uint)Instruction.IMM1_MASK) {
+                    if(pc >= instructions.Length) {
+                        status = Status.OUT_OF_INSTRUCTIONS;
+                        return false;
+                    }
+
                     imm1 = instructions[pc++];
                 }
 
@@ -326,7 +339,6 @@ namespace MicroVM {
                 }
 
                 if(handledHere) {
-                    status = Status.SUCCESS;
                     continue;
                 }
 
@@ -335,6 +347,11 @@ namespace MicroVM {
                 uint imm2 = (inst & (uint)Instruction.IMM2_MASK) >> (int)Instruction.IMM2_SHIFT;
 
                 if(op2Flag == 0 && imm2 == (uint)Instruction.IMM2_MASK) {
+                    if(pc >= instructions.Length) {
+                        status = Status.OUT_OF_INSTRUCTIONS;
+                        return false;
+                    }
+
                     imm2 = instructions[pc++];
                 }
 
@@ -379,7 +396,6 @@ namespace MicroVM {
                 }
 
                 if(handledHere) {
-                    status = Status.SUCCESS;
                     continue;
                 }
 
@@ -388,6 +404,11 @@ namespace MicroVM {
                 uint imm3 = (inst & (uint)Instruction.IMM3_MASK) >> (int)Instruction.IMM3_SHIFT;
 
                 if(op3Flag == 0 && imm3 == (uint)Instruction.IMM3_MASK) {
+                    if(pc >= instructions.Length) {
+                        status = Status.OUT_OF_INSTRUCTIONS;
+                        return false;
+                    }
+
                     imm3 = instructions[pc++];
                 }
 
@@ -479,7 +500,6 @@ namespace MicroVM {
                 }
 
                 if(handledHere) {
-                    status = Status.SUCCESS;
                     continue;
                 }
 
@@ -487,8 +507,13 @@ namespace MicroVM {
                 return false;
             }
 
-            status = Status.SUCCESS;
-            return true;
+            if(savedStatus != Status.UNDEFINED) {
+                status = savedStatus;
+                return false;
+            } else {
+                status = Status.SUCCESS;
+                return true;
+            }
         }
     }
 }

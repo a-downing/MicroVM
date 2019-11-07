@@ -42,8 +42,6 @@ namespace MicroVM
                 ret
 
             main:
-                #jmp math_perf
-
                 mov r0 42
                 cmpi r0 42
                 jmp.ne 1001
@@ -100,9 +98,12 @@ namespace MicroVM
                 modf r2 r0 r1
                 cmpf r2 0.25
                 jmp.ne 1011
+
+                # segfault
+                #str r0 0x10000000
                 
                 # uncomment for performance test
-                #jmp main
+                jmp main
             ", 1024);
 
             if(!success) {
@@ -131,7 +132,7 @@ namespace MicroVM
             }
 
             // simple performace test, currently ~70 million instructions/s
-            /*const int numCycles = 1000000;
+            const int numCycles = 1000000;
             stopWatch.Start();
 
             for(int i = 0; i < numCycles / 100; i++) {
@@ -149,19 +150,19 @@ namespace MicroVM
 
             stopWatch.Stop();
             double elapsedTime = stopWatch.Elapsed.TotalMilliseconds / 1000;
-            Print($"{numCycles} in {elapsedTime}s ({(float)(numCycles / elapsedTime)} instructions/s)");*/
+            Print($"{numCycles} in {elapsedTime}s ({(float)(numCycles / elapsedTime)} instructions/s)");
         }
 
         class Peripheral : MicroVM.CPU.IPeripheral {
             CPU.Value32 data = new CPU.Value32{ Uint = 0 };
 
             public CPU.Value32 Read(uint addr) {
-                Print($"Read(uint addr: 0x{addr.ToString("X").PadLeft(8, '0')}) -> 0x{data.Uint.ToString("X").PadLeft(8, '0')}");
+                //Print($"Read(uint addr: 0x{addr.ToString("X").PadLeft(8, '0')}) -> 0x{data.Uint.ToString("X").PadLeft(8, '0')}");
                 return data;
             }
 
             public void Write(uint addr, CPU.Value32 value) {
-                Print($"Write(uint addr: 0x{addr.ToString("X").PadLeft(8, '0')}, uint value: 0x{value.Uint.ToString("X").PadLeft(8, '0')})");
+                //Print($"Write(uint addr: 0x{addr.ToString("X").PadLeft(8, '0')}, uint value: 0x{value.Uint.ToString("X").PadLeft(8, '0')})");
                 data = value;
             }
         }
