@@ -16,14 +16,6 @@ namespace MicroVM {
         public uint peripheralBase = 0;
         Status savedStatus;
 
-        static void Print(string msg) {
-            Console.WriteLine(msg);
-        }
-
-        static void PrintVar<T>(string name, T var) {
-            Print($"{name}: {var}");
-        }
-
         public CPU(IPeripheral peripheral, uint peripheralBase) {
             this.peripheral = peripheral;
             this.peripheralBase = peripheralBase;

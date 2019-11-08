@@ -14,14 +14,6 @@ namespace MicroVM {
         public int numInstructions;
         List<KeyValuePair<Symbol, Symbol>> isrs = new List<KeyValuePair<Symbol, Symbol>>();
 
-        static void Print(string msg) {
-            Console.WriteLine(msg);
-        }
-
-        static void PrintVar<T>(string name, T var) {
-            Print($"{name}: {var}");
-        }
-
         public void Reset() {
             statements.Clear();
             symbols.Clear();
