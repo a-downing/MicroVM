@@ -131,8 +131,7 @@ namespace MicroVM {
         }
 
         void AssignMemory(uint addr, Value32 val) {
-            //Print($"AssignMemory(uint addr: {addr}, uint value: {value})");
-
+            //Program.Print($"AssignMemory(uint addr: {addr}, uint value: {val})");
             if(peripheral != null && addr >= peripheralBase) {
                 peripheral.Write(addr, val);
                 return;
@@ -200,11 +199,46 @@ namespace MicroVM {
                 uint inst = instructions[pc++];
                 Opcode opcode = (Opcode)((inst & (uint)Instruction.OPCODE_MASK) >> (int)Instruction.OPCODE_SHIFT);
                 Cond cond = (Cond)((inst & (int)Instruction.COND_MASK) >> (int)Instruction.COND_SHIFT);
+                uint op1Flag = inst & (uint)Instruction.OP1_FLAG_MASK;
+                uint op2Flag = inst & (uint)Instruction.OP2_FLAG_MASK;
+                uint op3Flag = inst & (uint)Instruction.OP3_FLAG_MASK;
+                uint immediate = 0;
+                bool nextIsImmediate = false;
 
-                /*PrintVar(nameof(pc), pc);
-                Print($"instruction: {opcode}.{cond}");
-                Print($"instruction bits: {Convert.ToString(inst, 2).PadLeft(32, '0')}");
-                Print($"flags: {Convert.ToString(flags & (uint)Flag.EQUAL, 2).PadLeft(32, '0')}");*/
+                /*Program.Print("");
+                Program.PrintVar(nameof(pc), pc);
+                Program.Print($"instruction: {opcode}.{cond}");
+                Program.Print($"instruction bits: {Convert.ToString(inst, 2).PadLeft(32, '0')}");
+                Program.Print($"flags: {Convert.ToString(flags & (uint)Flag.EQUAL, 2).PadLeft(32, '0')}");*/
+
+                if(op1Flag == 0) {
+                    immediate = inst & (uint)Instruction.IMM1_MASK;
+
+                    if(immediate == (uint)Instruction.IMM1_MASK) {
+                        nextIsImmediate = true;
+                    }
+                } else if(op2Flag == 0) {
+                    immediate = inst & (uint)Instruction.IMM2_MASK;
+
+                    if(immediate == (uint)Instruction.IMM2_MASK) {
+                        nextIsImmediate = true;
+                    }
+                } else if(op3Flag == 0) {
+                    immediate = inst & (uint)Instruction.IMM3_MASK;
+
+                    if(immediate == (uint)Instruction.IMM3_MASK) {
+                        nextIsImmediate = true;
+                    }
+                }
+
+                if(nextIsImmediate) {
+                    if(pc >= instructions.Length) {
+                        status = Status.OUT_OF_INSTRUCTIONS;
+                        return false;
+                    }
+
+                    immediate = instructions[pc++];
+                }
 
                 switch(cond) {
                     case Cond.EQ:
@@ -265,37 +299,19 @@ namespace MicroVM {
                 }
 
                 if(handledHere) {
-                    if(savedStatus == Status.UNDEFINED) {
-                        status = Status.SUCCESS;
-                        continue;
-                    } else {
-                        status = savedStatus;
-                        return false;
-                    }
+                    continue;
                 }
 
                 uint op1 = (inst & (uint)Instruction.OP1_MASK) >> (int)Instruction.OP1_SHIFT;
-                uint op1Flag = inst & (uint)Instruction.OP1_FLAG_MASK;
-                uint imm1 = (inst & (uint)Instruction.IMM1_MASK) >> (int)Instruction.IMM1_SHIFT;
-
-                if(op1Flag == 0 && imm1 == (uint)Instruction.IMM1_MASK) {
-                    if(pc >= instructions.Length) {
-                        status = Status.OUT_OF_INSTRUCTIONS;
-                        return false;
-                    }
-
-                    imm1 = instructions[pc++];
-                }
-
-                uint arg1 = (op1Flag != 0) ? registers[op1] : imm1;
+                uint arg1 = (op1Flag != 0) ? registers[op1] : immediate;
                 // just testing this, if it's not slower, arg1 will just be a Value32
                 Value32 arg1v = new Value32 { Uint = arg1 };
                 handledHere = true;
 
-                /*PrintVar(nameof(op1), op1);
-                PrintVar(nameof(op1Flag), op1Flag);
-                PrintVar(nameof(imm1), imm1);
-                PrintVar(nameof(arg1), arg1);*/
+                /*Program.PrintVar(nameof(op1), op1);
+                Program.PrintVar(nameof(op1Flag), op1Flag);
+                Program.PrintVar(nameof(immediate), immediate);
+                Program.PrintVar(nameof(arg1), arg1);*/
 
                 // one arg instructions
                 switch(opcode) {
@@ -335,26 +351,14 @@ namespace MicroVM {
                 }
 
                 uint op2 = (inst & (uint)Instruction.OP2_MASK) >> (int)Instruction.OP2_SHIFT;
-                uint op2Flag = inst & (uint)Instruction.OP2_FLAG_MASK;
-                uint imm2 = (inst & (uint)Instruction.IMM2_MASK) >> (int)Instruction.IMM2_SHIFT;
-
-                if(op2Flag == 0 && imm2 == (uint)Instruction.IMM2_MASK) {
-                    if(pc >= instructions.Length) {
-                        status = Status.OUT_OF_INSTRUCTIONS;
-                        return false;
-                    }
-
-                    imm2 = instructions[pc++];
-                }
-
-                uint arg2 = (op2Flag != 0) ? registers[op2] : imm2;
+                uint arg2 = (op2Flag != 0) ? registers[op2] : immediate;
                 Value32 arg2v = new Value32 { Uint = arg2 };
                 handledHere = true;
 
-                /*PrintVar(nameof(op2), op2);
-                PrintVar(nameof(op2Flag), op2Flag);
-                PrintVar(nameof(imm2), imm2);
-                PrintVar(nameof(arg2), arg2);*/
+                /*Program.PrintVar(nameof(op2), op2);
+                Program.PrintVar(nameof(op2Flag), op2Flag);
+                Program.PrintVar(nameof(immediate), immediate);
+                Program.PrintVar(nameof(arg2), arg2);*/
 
                 // two arg instructions
                 switch(opcode) {
@@ -392,26 +396,14 @@ namespace MicroVM {
                 }
 
                 uint op3 = (inst & (uint)Instruction.OP3_MASK) >> (int)Instruction.OP3_SHIFT; 
-                uint op3Flag = inst & (uint)Instruction.OP3_FLAG_MASK;
-                uint imm3 = (inst & (uint)Instruction.IMM3_MASK) >> (int)Instruction.IMM3_SHIFT;
-
-                if(op3Flag == 0 && imm3 == (uint)Instruction.IMM3_MASK) {
-                    if(pc >= instructions.Length) {
-                        status = Status.OUT_OF_INSTRUCTIONS;
-                        return false;
-                    }
-
-                    imm3 = instructions[pc++];
-                }
-
-                uint arg3 = (op3Flag != 0) ? registers[op3] : imm3;
+                uint arg3 = (op3Flag != 0) ? registers[op3] : immediate;
                 Value32 arg3v = new Value32 { Uint = arg3 };
                 handledHere = true;
 
-                /*PrintVar(nameof(op3), op3);
-                PrintVar(nameof(op3Flag), op3Flag);
-                PrintVar(nameof(imm3), imm3);
-                PrintVar(nameof(arg3), arg3);*/
+                /*Program.PrintVar(nameof(op3), op3);
+                Program.PrintVar(nameof(op3Flag), op3Flag);
+                Program.PrintVar(nameof(immediate), immediate);
+                Program.PrintVar(nameof(arg3), arg3);*/
 
                 // three arg instructions
                 switch(opcode) {

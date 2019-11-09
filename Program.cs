@@ -6,11 +6,11 @@ namespace MicroVM
 {
     class Program
     {
-        static void Print(string msg) {
+        public static void Print(string msg) {
             Console.WriteLine(msg);
         }
 
-        static void PrintVar<T>(string name, T var) {
+        public static void PrintVar<T>(string name, T var) {
             Print($"{name}: {var}");
         }
 
