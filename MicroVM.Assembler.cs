@@ -14,6 +14,16 @@ namespace MicroVM {
         public int numInstructions;
         List<KeyValuePair<Symbol, Symbol>> isrs = new List<KeyValuePair<Symbol, Symbol>>();
 
+        Regex directiveRegex = new Regex(@"^\.([a-zA-Z_][a-zA-Z0-9_]*)$");
+        Regex labelRegex = new Regex(@"^([a-zA-Z_][a-zA-Z0-9_]*):$");
+        Regex identifierRegex = new Regex(@"^[a-zA-Z_][a-zA-Z0-9_]*$");
+        Regex instructionRegex = new Regex(@"^([a-zA-Z_][a-zA-Z0-9_]*)\.(al|eq|ne|gt|ge|lt|le)$");
+        Regex floatRegex = new Regex(@"^[+-]?[0-9]?[\.][0-9]*$");
+
+        Regex decimalRegex = new Regex(@"^[+-]?[0-9]+$");
+        Regex hexRegex = new Regex(@"^([+-])?0x([0-9a-zA-Z]+)$");
+        Regex binRegex = new Regex( @"^([+-])?0b([01]+)$");
+
         public void Reset() {
             statements.Clear();
             symbols.Clear();
@@ -497,10 +507,10 @@ namespace MicroVM {
             return true;
         }
 
-        static bool TryParseIntegerLiteral(string str, out int value) {
-            Match decimalMatch = Regex.Match(str, @"^[+-]?[0-9]+$");
-            Match hexMatch = Regex.Match(str, @"^([+-])?0x([0-9a-zA-Z]+)$");
-            Match binMatch = Regex.Match(str, @"^([+-])?0b([01]+)$");
+        bool TryParseIntegerLiteral(string str, out int value) {
+            Match decimalMatch = decimalRegex.Match(str);
+            Match hexMatch = hexRegex.Match(str);
+            Match binMatch = binRegex.Match(str);
 
             if(decimalMatch.Success) {
                 value = Convert.ToInt32(decimalMatch.Groups[0].ToString(), 10);
@@ -539,11 +549,11 @@ namespace MicroVM {
                     statement.tokens[j].offset = 0;
                     statement.tokens[j].type = Token.Type.NONE;
 
-                    Match directiveMatch = Regex.Match(arg, @"^\.([a-zA-Z_][a-zA-Z0-9_]*)$");
-                    Match labelMatch = Regex.Match(arg, @"^([a-zA-Z_][a-zA-Z0-9_]*):$");
-                    Match identifierMatch = Regex.Match(arg, @"^[a-zA-Z_][a-zA-Z0-9_]*$");
-                    Match instructionMatch = Regex.Match(arg, @"^([a-zA-Z_][a-zA-Z0-9_]*)\.(al|eq|ne|gt|ge|lt|le)$");
-                    Match floatMatch = Regex.Match(arg, @"^[+-]?[0-9]?[\.][0-9]*$");
+                    Match directiveMatch = directiveRegex.Match(arg);
+                    Match labelMatch = labelRegex.Match(arg);
+                    Match identifierMatch = identifierRegex.Match(arg);
+                    Match instructionMatch = instructionRegex.Match(arg);
+                    Match floatMatch = floatRegex.Match(arg);
 
                     if(directiveMatch.Success) {
                         statement.tokens[j].type = Token.Type.DIRECTIVE;
