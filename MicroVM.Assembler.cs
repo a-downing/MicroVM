@@ -90,7 +90,7 @@ namespace MicroVM {
             cpu.memory = new byte[memory.Length];
             memory.CopyTo(cpu.memory, 0);
             cpu.registers[(int)CPU.Register.SP] = (uint)programData.Count;
-            cpu.pc = symbols["main"].var.val32.Uint;
+            cpu.pc = symbols["_start"].var.val32.Uint;
             int instructionIndex = 0;
 
             for(int i = 0; i < instructions.Count; i++) {
@@ -177,8 +177,8 @@ namespace MicroVM {
                 return false;
             }
 
-            if(!symbols.ContainsKey("main")) {
-                errors.Add($"program must define \"main:\" entry point");
+            if(!symbols.ContainsKey("_start")) {
+                errors.Add($"program must define \"_start:\" entry point");
                 return false;
             }
 
@@ -294,6 +294,8 @@ namespace MicroVM {
 
             for(int i = 0; i < instructions.Count; i++) {
                 Instruction instruction = instructions[i];
+
+                instruction.address += growth;
                 
                 if(instruction.immediate.type == Symbol.Type.LABEL) {
                     uint maxValue = GetMaxImmediateValue(instruction.operands.Count + 1);

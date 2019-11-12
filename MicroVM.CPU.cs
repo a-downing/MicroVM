@@ -99,7 +99,7 @@ namespace MicroVM {
         }
 
         public enum Opcode {
-            RET, CLI, SEI,
+            NOP, RET, CLI, SEI,
             JMP, JNE, CALL, PUSH, POP,
             MOV, LDR, LDRB, STR, STRB, CMPI, CMPU,
             SHRS, SHRU, SHL, AND, OR, XOR, NOT, ADD, SUB, MUL, DIV, MOD,
@@ -283,6 +283,8 @@ namespace MicroVM {
 
                 // zero arg instructions
                 switch(opcode) {
+                    case Opcode.NOP:
+                        break;
                     case Opcode.RET:
                         registers[(int)Register.SP] -= 4;
                         pc = ReadMemory(registers[(int)Register.SP]).Uint;
@@ -365,12 +367,6 @@ namespace MicroVM {
                     case Opcode.MOV:
                         registers[op1] = arg2;
                         break;
-                    case Opcode.LDR:
-                        registers[op1] = ReadMemory(arg2).Uint;
-                        break;
-                    case Opcode.STR:
-                        AssignMemory(arg2, arg1);
-                        break;
                     case Opcode.CMPI:
                         flags = ((int)arg1 == (int)arg2) ? flags | (uint)Flag.EQUAL : flags & ~(uint)Flag.EQUAL;
                         flags = ((int)arg1 > (int)arg2) ? flags | (uint)Flag.GREATER_THAN : flags & ~(uint)Flag.GREATER_THAN;
@@ -407,6 +403,12 @@ namespace MicroVM {
 
                 // three arg instructions
                 switch(opcode) {
+                    case Opcode.LDR:
+                        registers[op1] = ReadMemory((uint)(arg2 + arg3v.Int)).Uint;
+                        break;
+                    case Opcode.STR:
+                        AssignMemory((uint)(arg2 + arg3v.Int), arg1);
+                        break;
                     case Opcode.SHRS:
                         registers[op1] = (uint)((int)arg2 >> (int)arg3);
                         break;

@@ -2,6 +2,7 @@ bin/
 obj/Debug/
 obj/Release/
 node_modules/
+notes.txt
 *.ts
 *.js
 *.json
