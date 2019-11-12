@@ -104,6 +104,7 @@ namespace MicroVM {
             MOV, LDR, LDRB, STR, STRB, CMPI, CMPU,
             SHRS, SHRU, SHL, AND, OR, XOR, NOT, ADD, SUB, MUL, DIV, MOD,
             ITOF, FTOI, CMPF, ADDF, SUBF, MULF, DIVF, MODF,
+            RNGI, RNGF,
             RESERVED = 0x3F
         }
 
@@ -342,6 +343,13 @@ namespace MicroVM {
                         var ftoi = new Value32 { Uint = registers[op1] };
                         ftoi.Int = (int)ftoi.Float;
                         registers[op1] = ftoi.Uint;
+                        break;
+                    case Opcode.RNGI:
+                        registers[op1] = (uint)random.Next();
+                        break;
+                    case Opcode.RNGF:
+                        var rngf = new Value32 { Float = (float)random.NextDouble() };
+                        registers[op1] = rngf.Uint;
                         break;
                     default:
                         handledHere = false;

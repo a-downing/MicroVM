@@ -23,12 +23,17 @@ namespace MicroVM
             // some tests to make sure things are working
             bool success = assembler.Compile(@"
 print:
-    push bp
-    mov bp sp
-    ldr r0 bp -12
+    #push bp
+    #mov bp sp
+    #ldr r0 bp -12
+    ldr r0 sp -12
     str r0 0x80000000
-    mov sp bp
-    pop bp
+    #mov sp bp
+    #pop bp
+    ret
+
+randInt:
+    rngi r0
     ret
 
 _start:
@@ -36,6 +41,7 @@ mov bp sp
 call main
 jmp end
 
+# testing compiled code
 .word x 0
 .word y 0
 .word z 0
@@ -104,6 +110,9 @@ jmp.eq __while_end_2
 ldr r0 bp +4
 push r0
 call print
+call randInt
+push r0
+call print
 ldr r0 bp +4
 mov r1 1
 add r0 r0 r1
@@ -146,7 +155,6 @@ pop bp
 ret
 
 end:
-jmp _start
 nop
             ", 1024);
 
