@@ -132,7 +132,8 @@ namespace MicroVM {
         }
 
         void AssignMemory(uint addr, Value32 val) {
-            //Program.Print($"AssignMemory(uint addr: {addr}, uint value: {val})");
+            //Program.Print($"AssignMemory(uint addr: {addr}, uint value: {val.Int})");
+            
             if(peripheral != null && addr >= peripheralBase) {
                 peripheral.Write(addr, val);
                 return;
@@ -166,7 +167,7 @@ namespace MicroVM {
                 byte3 = memory[addr + 3]
             };
 
-            //Print($"ReadMemory(uint addr: {addr}) -> uint: {val.Uint}");
+            //Program.Print($"ReadMemory(uint addr: {addr}) -> uint: {val.Uint}");
             return val;
         }
 

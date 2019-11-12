@@ -23,15 +23,10 @@ namespace MicroVM
             // some tests to make sure things are working
             bool success = assembler.Compile(@"
 print:
-    #push bp
-    #mov bp sp
-    #ldr r0 bp -12
-    ldr r0 sp -12
+    ldr r0 sp -8
     str r0 0x80000000
-    #mov sp bp
-    #pop bp
     ret
-
+    
 randInt:
     rngi r0
     ret
@@ -75,6 +70,7 @@ str r0 bp +0
 mov r0 0x50
 push r0
 call foo
+sub sp sp 4
 ldr r0 bp +0
 mov r1 49
 cmpi r0 r1
@@ -85,17 +81,20 @@ jmp.eq __if_else_1
 mov r0 0x49
 push r0
 call foo
+sub sp sp 4
 jmp __if_end_1
 __if_else_1:
 mov r0 0xdead0049
 push r0
 call foo
+sub sp sp 4
 __if_end_1:
 jmp __if_end_0
 __if_else_0:
 mov r0 0xdead0050
 push r0
 call foo
+sub sp sp 4
 __if_end_0:
 mov r0 0
 str r0 bp +4
@@ -110,9 +109,12 @@ jmp.eq __while_end_2
 ldr r0 bp +4
 push r0
 call print
+sub sp sp 4
 call randInt
+sub sp sp 0
 push r0
 call print
+sub sp sp 4
 ldr r0 bp +4
 mov r1 1
 add r0 r0 r1
@@ -123,7 +125,7 @@ mov r0 0
 str r0 bp +8
 __while_start_3:
 ldr r0 bp +8
-mov r1 3
+mov r1 5
 cmpi r0 r1
 mov r0 0
 mov.lt r0 1
@@ -132,6 +134,7 @@ jmp.eq __while_end_3
 ldr r0 bp +8
 push r0
 call print
+sub sp sp 4
 ldr r0 bp +8
 mov r1 1
 add r0 r0 r1
@@ -149,6 +152,7 @@ add sp sp 0
 ldr r0 bp -12
 push r0
 call print
+sub sp sp 4
 mov r0 0
 mov sp bp
 pop bp
@@ -173,7 +177,7 @@ nop
             //cpu.Interrupt(0);
 
             // pc will be one of the 1000, 1001... codes to identify the bugs on failure
-            if(!cpu.Cycle(out st, 1000)) {
+            if(!cpu.Cycle(out st, 2000)) {
                 if(st == MicroVM.CPU.Status.OUT_OF_INSTRUCTIONS) {
                     Print($"program finished");
                 } else {
