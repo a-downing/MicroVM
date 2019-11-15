@@ -22,7 +22,7 @@ namespace MicroVM {
         }
 
         public void Reset() {
-            registers = new uint[64];
+            Array.Clear(registers, 0, registers.Length);
             memory = null;
             instructions = null;
             flags = (uint)Flag.INTERRUPTS_ENABLED;
@@ -100,7 +100,7 @@ namespace MicroVM {
 
         public enum Opcode {
             NOP, RET, CLI, SEI,
-            JMP, JNE, CALL, PUSH, POP,
+            JMP, CALL, PUSH, POP,
             MOV, LDR, LDRB, STR, STRB, CMPI, CMPU,
             SHRS, SHRU, SHL, AND, OR, XOR, NOT, ADD, SUB, MUL, DIV, MOD,
             ITOF, FTOI, CMPF, ADDF, SUBF, MULF, DIVF, MODF,
