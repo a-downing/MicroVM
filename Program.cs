@@ -34,7 +34,14 @@ namespace MicroVM
             _start:
                 mov bp sp
                 call main
+
+                #test strb/ldrb
+                mov r0 0xaaaaaabb
+                strb r0 0xdeadbeef
+                ldrb r0 0xdeadbeef
+
                 jmp end
+                #jmp _start
             ";
 
             // code generated from compiler

@@ -137,7 +137,7 @@ namespace MicroVM {
             if(peripheral != null && addr >= peripheralBase) {
                 peripheral.Write(addr, val);
                 return;
-            } else if(addr >= memory.Length) {
+            } else if(addr + 4 >= memory.Length) {
                 savedStatus = Status.SEGFAULT;
                 return;
             }
@@ -155,7 +155,7 @@ namespace MicroVM {
         Value32 ReadMemory(uint addr) {
             if(peripheral != null && addr >= peripheralBase) {
                 return peripheral.Read(addr);
-            } else if(addr >= memory.Length) {
+            } else if(addr + 4 >= memory.Length) {
                 savedStatus = Status.SEGFAULT;
                 return new Value32 { Uint = 0 };
             }
@@ -169,6 +169,29 @@ namespace MicroVM {
 
             //Program.Print($"ReadMemory(uint addr: {addr}) -> uint: {val.Uint}");
             return val;
+        }
+
+        byte ReadMemoryByte(uint addr) {
+            if(peripheral != null && addr >= peripheralBase) {
+                return peripheral.Read(addr).byte0;
+            } else if(addr >= memory.Length) {
+                savedStatus = Status.SEGFAULT;
+                return 0;
+            }
+
+            return memory[addr];
+        }
+
+        void AssignMemoryByte(uint addr, byte val) {          
+            if(peripheral != null && addr >= peripheralBase) {
+                peripheral.Write(addr, new Value32 { byte0 = val });
+                return;
+            } else if(addr >= memory.Length) {
+                savedStatus = Status.SEGFAULT;
+                return;
+            }
+
+            memory[addr] = val;
         }
 
         public bool Cycle(out Status status, int numCycles = 1) {
@@ -417,6 +440,12 @@ namespace MicroVM {
                         break;
                     case Opcode.STR:
                         AssignMemory((uint)(arg2 + arg3v.Int), arg1);
+                        break;
+                    case Opcode.LDRB:
+                        registers[op1] = ReadMemoryByte((uint)(arg2 + arg3v.Int));
+                        break;
+                    case Opcode.STRB:
+                        AssignMemoryByte((uint)(arg2 + arg3v.Int), (byte)arg1);
                         break;
                     case Opcode.SHRS:
                         registers[op1] = (uint)((int)arg2 >> (int)arg3);
